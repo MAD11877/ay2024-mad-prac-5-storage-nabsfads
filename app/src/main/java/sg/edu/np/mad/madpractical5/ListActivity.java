@@ -17,7 +17,7 @@ public class ListActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        DBHandler dbHandler = new DBHandler(this);
+        DatabaseHandler dbHandler = new DatabaseHandler(this);
         List<User> userList = dbHandler.getUsers();
 
         UserAdapter userAdapter = new UserAdapter(userList, user -> {

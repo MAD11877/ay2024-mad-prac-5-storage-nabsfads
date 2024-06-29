@@ -1,3 +1,4 @@
+
 package sg.edu.np.mad.madpractical5;
 
 import android.os.Bundle;
@@ -9,14 +10,14 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     private User currentUser;
-    private DBHandler dbHandler;
+    private DatabaseHandler dbHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        dbHandler = new DBHandler(this);
+        dbHandler = new DatabaseHandler(this);
 
         TextView titleTextView = findViewById(R.id.titleTextView);
         TextView descriptionTextView = findViewById(R.id.descriptionTextView);
