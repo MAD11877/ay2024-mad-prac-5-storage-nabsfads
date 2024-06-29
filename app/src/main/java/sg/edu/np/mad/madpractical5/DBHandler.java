@@ -9,18 +9,16 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class DBHandler extends SQLiteOpenHelper {
-
-    private static final String TAG = "DBHandler";
-
     private static final int DATABASE_VERSION = 1;
-    private static final String DATABASE_NAME = "usersDB.db";
+    private static final String DATABASE_NAME = "users.db";
     private static final String TABLE_USERS = "Users";
-    private static final String COLUMN_ID = "id";
-    private static final String COLUMN_NAME = "name";
-    private static final String COLUMN_DESCRIPTION = "description";
-    private static final String COLUMN_FOLLOWED = "followed";
+    private static final String KEY_ID = "id";
+    private static final String KEY_NAME = "name";
+    private static final String KEY_DESCRIPTION = "description";
+    private static final String KEY_FOLLOWED = "followed";
 
     public DBHandler(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -29,12 +27,22 @@ public class DBHandler extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         String CREATE_USERS_TABLE = "CREATE TABLE " + TABLE_USERS + "("
-                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + COLUMN_NAME + " TEXT,"
-                + COLUMN_DESCRIPTION + " TEXT,"
-                + COLUMN_FOLLOWED + " INTEGER" + ")";
+                + KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + KEY_NAME + " TEXT,"
+                + KEY_DESCRIPTION + " TEXT,"
+                + KEY_FOLLOWED + " BOOLEAN" + ")";
         db.execSQL(CREATE_USERS_TABLE);
-        generateInitialUsers(db);
+
+        for (int i = 0; i < 20; i++) {
+            ContentValues values = new ContentValues();
+            values.put(KEY_NAME, "Name" + new Random().nextInt(100000));
+            values.put(KEY_DESCRIPTION, "Description " + new Random().nextInt(100000));
+            values.put(KEY_FOLLOWED, new Random().nextBoolean());
+            db.insert(TABLE_USERS, null, values);
+        }
+
+
+        Log.d("DatabaseHandler", "Database and Users table created.");
     }
 
     @Override
@@ -43,62 +51,36 @@ public class DBHandler extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    private void generateInitialUsers(SQLiteDatabase db) {
-        for (int i = 0; i < 20; i++) {
-            ContentValues values = new ContentValues();
-            values.put(COLUMN_NAME, "Name " + String.format("%09d", i));
-            values.put(COLUMN_DESCRIPTION, "Description " + String.format("%09d", i));
-            values.put(COLUMN_FOLLOWED, (i % 2 == 0) ? 1 : 0);
-            db.insert(TABLE_USERS, null, values);
-        }
-    }
-
     public List<User> getUsers() {
         List<User> userList = new ArrayList<>();
+        String selectQuery = "SELECT * FROM " + TABLE_USERS;
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_USERS, null);
-        try {
-            if (cursor != null) {
-                int columnIndexName = cursor.getColumnIndex(COLUMN_NAME);
-                int columnIndexDescription = cursor.getColumnIndex(COLUMN_DESCRIPTION);
-                int columnIndexId = cursor.getColumnIndex(COLUMN_ID);
-                int columnIndexFollowed = cursor.getColumnIndex(COLUMN_FOLLOWED);
+        Cursor cursor = db.rawQuery(selectQuery, null);
 
-                while (cursor.moveToNext()) {
-                    // Check if columnIndex is valid (-1 means column not found)
-                    if (columnIndexName != -1 && columnIndexDescription != -1
-                            && columnIndexId != -1 && columnIndexFollowed != -1) {
-                        String name = cursor.getString(columnIndexName);
-                        String description = cursor.getString(columnIndexDescription);
-                        int id = cursor.getInt(columnIndexId);
-                        boolean followed = cursor.getInt(columnIndexFollowed) == 1;
-
-                        User user = new User(name, description, id, followed);
-                        userList.add(user);
-                    } else {
-                        Log.e(TAG, "One or more columns not found in database.");
-                        // Handle the error or continue with next iteration
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error while getting users from database", e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-            db.close();
+        if (cursor.moveToFirst()) {
+            do {
+                User user = new User();
+                user.setId(cursor.getInt(0));
+                user.setName(cursor.getString(1));
+                user.setDescription(cursor.getString(2));
+                user.setFollowed(cursor.getInt(3) > 0);
+                userList.add(user);
+            } while (cursor.moveToNext());
         }
+        cursor.close();
+        // db.close();
         return userList;
     }
-
 
     public void updateUser(User user) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_FOLLOWED, user.followed ? 1 : 0);  // Assuming 'followed' is a public field in User class
-        db.update(TABLE_USERS, values, COLUMN_ID + " = ?",
-                new String[]{String.valueOf(user.id)});
-        db.close();
+        values.put(KEY_NAME, user.getName());
+        values.put(KEY_DESCRIPTION, user.getDescription());
+        values.put(KEY_FOLLOWED, user.getFollowed());
+
+
+        db.update(TABLE_USERS, values, KEY_ID + " = ?", new String[]{String.valueOf(user.getId())});
+        // db.close();
     }
 }

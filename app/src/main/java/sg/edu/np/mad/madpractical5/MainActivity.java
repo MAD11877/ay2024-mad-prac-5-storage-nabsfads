@@ -4,55 +4,40 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
 
-    private DBHandler dbHandler;
-    private boolean isFollowed;
     private User currentUser;
+    private DBHandler dbHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
         dbHandler = new DBHandler(this);
 
-        int userId = getIntent().getIntExtra("id", -1);
+        TextView titleTextView = findViewById(R.id.titleTextView);
+        TextView descriptionTextView = findViewById(R.id.descriptionTextView);
+        Button followButton = findViewById(R.id.followButton);
+
         String name = getIntent().getStringExtra("name");
         String description = getIntent().getStringExtra("description");
-        isFollowed = getIntent().getBooleanExtra("followed", false);
+        boolean followed = getIntent().getBooleanExtra("followed", false);
+        int id = getIntent().getIntExtra("id", -1);
 
-        currentUser = new User(name, description, userId, isFollowed);
+        currentUser = new User(name, description, id, followed);
 
-        TextView tvName = findViewById(R.id.tvName);
-        TextView tvDescription = findViewById(R.id.tvDescription);
-        Button btnFollow = findViewById(R.id.btnFollow);
+        titleTextView.setText(currentUser.getName());
+        descriptionTextView.setText(currentUser.getDescription());
+        followButton.setText(currentUser.getFollowed() ? "UNFOLLOW" : "FOLLOW");
 
-        tvName.setText(name);
-        tvDescription.setText(description);
-
-        btnFollow.setText(isFollowed ? "Unfollow" : "Follow");
-
-        btnFollow.setOnClickListener(v -> {
-            isFollowed = !isFollowed;
-            btnFollow.setText(isFollowed ? "Unfollow" : "Follow");
-            Toast.makeText(MainActivity.this, isFollowed ? "Followed" : "Unfollowed", Toast.LENGTH_SHORT).show();
-            currentUser.followed = isFollowed;
+        followButton.setOnClickListener(v -> {
+            currentUser.setFollowed(!currentUser.getFollowed());
+            followButton.setText(currentUser.getFollowed() ? "UNFOLLOW" : "FOLLOW");
+            Toast.makeText(this, currentUser.getFollowed() ? "Followed" : "Unfollowed", Toast.LENGTH_SHORT).show();
             dbHandler.updateUser(currentUser);
-        });
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
         });
     }
 }
